@@ -1,0 +1,36 @@
+software-deployment-method: conda
+use-conda: True
+
+latency-wait: 60
+rerun-incomplete: True
+retries: 1
+local-cores: 1
+
+executor: slurm
+
+default-resources:
+    slurm_partition: upgrade
+    mem_mb: min(max(2*input.size_mb, 3000) * attempt, 15000)
+    runtime: f"{60 * attempt}m"
+
+
+jobs: unlimited
+
+
+set-resources:
+    run_cfclone:
+        mem_mb: min((2000 * threads) * attempt, 180000)
+        runtime: f"{1440 * attempt}m"
+    create_clonal_rho_table_from_cfClone_result:
+        mem_mb: min(max(2*input.size_mb, 15000) * attempt, 50000)
+        runtime: f"{360 * attempt}m"
+    create_mu_p_tables_from_cfClone_result:
+        mem_mb: min(max(2*input.size_mb, 20000) * attempt, 50000)
+        runtime: f"{360 * attempt}m"
+    create_clonal_prev_summary_table_and_tree_plots:
+        mem_mb: min(max(2*input.size_mb, 15000) * attempt, 50000)
+        runtime: f"{360 * attempt}m"
+
+group-components:
+    sample-pre-proc: 5
+    sample-plotting: 5

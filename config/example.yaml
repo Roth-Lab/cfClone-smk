@@ -1,0 +1,16 @@
+out_dir: <path/to/out_dir>
+
+clonal_cn_bed: <path/to/clonal_copy_number_profiles.bed>
+
+clone_tree_newick: <path/to/clone_tree.nwk>
+
+sample_tsv: <path/to/input_sample_paths_file.tsv>
+
+# The following section is entirely optional, if omitted, default settings will be used
+# The example below lists common options to modify and is populated with the defaults
+cfClone:
+  subsampling: 1
+  num_threads: 10
+  symmetrization: 0.5
+  rdr_likelihood: "TDistribution"
+  baf_likelihood: "BetaBinomial"

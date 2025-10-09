@@ -1,0 +1,74 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: cfClone Pipeline Schema
+description: Snakemake configuration file for cfClone pipeline
+type: object
+properties:
+  out_dir:
+    type: string
+    minLength: 1
+    description: Path to output directory
+  sample_tsv:
+    type: string
+    minLength: 1
+    description: Path to bulk sample paths .tsv file, please ensure it complies with the required format
+  clonal_cn_bed:
+    type: string
+    minLength: 1
+    description: Path to input clonal copy-number profiles .bed
+  clone_tree_newick:
+    type: string
+    minLength: 1
+    description: Path to input clonal copy-number tree, in newick (.nwk) format
+
+  cfClone:
+    type: object
+    description: cfClone run parameters, please refer to cfClone documentation for details
+    properties:
+      subsampling:
+        type: integer
+        minimum: 1
+        default: 1
+      n_rounds:
+        type: integer
+        minimum: 1
+        default: 10
+      num_threads:
+        type: integer
+        minimum: 1
+        default: 10
+      symmetrization:
+        type: number
+        default: 0.5
+        enum:
+          - 0.0
+          - 0.5
+          - 1.0
+      rdr_likelihood:
+        type: string
+        description: cfClone rdr-likelihood to use
+        minLength: 1
+        default: "TDistribution"
+        enum:
+          - "Disable"
+          - "TDistribution"
+          - "TMix"
+      baf_likelihood:
+        type: string
+        description: cfClone baf-likelihood to use
+        minLength: 1
+        default: "BetaBinomial"
+        enum:
+          - "Disable"
+          - "Binomial"
+          - "BetaBinomial"
+          - "BetaBinomialMix"
+      keep_only_normal:
+        type: boolean
+        description: Whether to only keep the normal clone, refer to cfClone documentation for details
+        default: false
+
+required:
+  - sample_tsv
+  - out_dir
+  - clonal_cn_bed
+  - clone_tree_newick
