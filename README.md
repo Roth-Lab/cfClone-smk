@@ -57,7 +57,7 @@ To run this pipeline using the slurm workflow-profile:
 1. Ensure that the required [snakemake plugins](#required-snakemake-plugins-for-slurm-cluster-support) are installed.
 2. SSH onto the cluster
 3. On the login node start a screen session:
-   - `screen -S cnv-calling`
+   - `screen -S cfclone`
 4. From the screen session, activate your snakemake conda environment:
    - `conda activate snakemake`
 5. From the screen session, launch the pipeline using the slurm workflow-profile:
