@@ -32,10 +32,10 @@ def add_bin_name_col(df):
 def get_ctdna_df(in_file):
     df = pd.read_table(in_file)
     df = df.loc[df["valid"] == True]
-    df = df.rename(columns={"allele_0_count": "b", "allele_1_count": "a"})
+    df = df.rename(columns={"allele_0_count": "a", "allele_1_count": "b"})
     df["d"] = df["a"] + df["b"]
     df = df.sort_values(by=["chrom", "start", "end"], ignore_index=True)
-    df = df[['chrom', 'start', 'end', 'b', 'd', 'rdr_cor']].copy()
+    df = df[['chrom', 'start', 'end', 'a', 'b', 'd', 'rdr_cor']].copy()
     return df
 
 

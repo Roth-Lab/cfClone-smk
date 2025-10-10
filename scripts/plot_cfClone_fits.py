@@ -46,7 +46,8 @@ def plot_sample_fits(ctDNA_file, mu_summary_file, p_summary_file, sample_id):
     fig = plt.figure(figsize=(16, 8.5))
     grid = fig.add_gridspec(2, 1, hspace=0.1)
     ctdna_df = pd.read_table(ctDNA_file)
-    ctdna_df["baf"] = ctdna_df["b"] / ctdna_df["d"]
+    # ctdna_df["baf"] = ctdna_df["b"] / ctdna_df["d"]
+    ctdna_df["baf"] = ctdna_df["a"] / ctdna_df["d"]
     chroms = sort_chroms(ctdna_df["chrom"].unique())
     chroms_size = ctdna_df["chrom"].value_counts()
     width_ratios = [chroms_size[x] for x in chroms]
