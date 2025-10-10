@@ -34,3 +34,4 @@ set-resources:
 group-components:
     sample-pre-proc: 5
     sample-plotting: 5
+    sample-clone-pre-proc: 10

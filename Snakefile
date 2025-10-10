@@ -96,7 +96,7 @@ rule build_restricted_model_input:
     log:
         config_manager.get_log_file("build_restricted_model_input", "{sample}_{clone}.log"),
     group:
-        "sample-pre-proc"
+        "sample-clone-pre-proc"
     script:
         "scripts/build_restricted_model_input.py"
 
@@ -126,6 +126,8 @@ rule run_cfclone:
         report_log=config_manager.get_log_file("run_cfclone", "{sample}_report.log"),
     benchmark:
         config_manager.get_benchmark_file("run_cfclone", "{sample}.txt")
+    group:
+        "run-cfClone"
     shell:
         """
         mkdir -p {output.results_dir}
@@ -163,6 +165,8 @@ use rule run_cfclone as run_cfclone_restricted_model with:
         report_log=config_manager.get_log_file("run_cfclone", "{sample}_{clone}_report.log"),
     benchmark:
         config_manager.get_benchmark_file("run_cfclone", "{sample}_{clone}.txt")
+    group:
+        "run-restricted-cfClone"
 
 
 rule process_pigeons_summary:
@@ -174,6 +178,8 @@ rule process_pigeons_summary:
         "envs/python.yaml"
     log:
         config_manager.get_log_file("process_pigeons_summary", "{sample}.log"),
+    group:
+        "run-cfClone"
     params:
         model_used="full_model",
         sample_id=lambda wildcards: wildcards.sample,
@@ -188,6 +194,8 @@ use rule process_pigeons_summary as process_restricted_model_pigeons_summary wit
         pigeons_summary=config_manager.restricted_pigeons_summary,
     log:
         config_manager.get_log_file("process_pigeons_summary", "{sample}_{clone}.log"),
+    group:
+        "run-restricted-cfClone"
     params:
         model_used=config_manager.get_restricted_model_name,
         sample_id=lambda wildcards: wildcards.sample,
