@@ -33,9 +33,20 @@ class ConfigManager(object):
 
         self.csv_path = Path("").joinpath("results", "latest", "samples.csv.gz")
 
+        self.raw_pigeons_summary_path = Path("").joinpath("results", "latest", "build", "Pigeons_summary.csv")
+
         self._load_cfclone_settings()
 
         self.cfclone_settings = self.config["cfClone"]
+
+        self.clones = self.get_clone_list()
+
+    def get_clone_list(self):
+        bed_df = pd.read_table(self.patient_cn_bed_file)
+        non_clone_cols = {"chr", "start", "end"}
+        clone_list = [col for col in bed_df.columns if col not in non_clone_cols]
+        clone_list.append("normal")
+        return clone_list
 
     def _load_cfclone_settings(self):
         default_params = _get_default_cfclone_settings_dict()
@@ -68,6 +79,13 @@ class ConfigManager(object):
 
     def get_sample_raw_ctDNA_file(self, wildcards):
         return self.sample_df.loc[wildcards.sample, "path"]
+
+    def get_restricted_model_name(self, wildcards):
+        clone = wildcards.clone
+        if clone == "normal":
+            return "normal_only"
+        else:
+            return "normal_and_clone_{}".format(clone)
 
     @property
     def cfclone_threads(self):
@@ -110,6 +128,38 @@ class ConfigManager(object):
         return self.samples_dir.joinpath("{sample}")
 
     @property
+    def restricted_models_dir(self):
+        return self.sample_run_dir.joinpath("restricted_models")
+
+    @property
+    def restricted_model_run_dir(self):
+        return self.restricted_models_dir.joinpath("{clone}")
+
+    @property
+    def restricted_cfclone_sample_results_dir(self):
+        return self.restricted_model_run_dir.joinpath("cfclone_runs")
+
+    @property
+    def restricted_cfclone_results_file(self):
+        return self.restricted_model_run_dir.joinpath("cfclone_results.csv.gz")
+
+    @property
+    def raw_restricted_pigeons_summary(self):
+        return self.restricted_model_run_dir.joinpath("Pigeons_summary.csv")
+
+    @property
+    def restricted_pigeons_summary(self):
+        return self.restricted_model_run_dir.joinpath("clone_{clone}_restricted_pigeons_summary.tsv.gz")
+
+    # @property
+    # def restricted_sample_ctDNA_file(self):
+    #     return self.restricted_model_run_dir.joinpath("inputs", "restricted_cfClone_ctDNA.tsv.gz")
+
+    @property
+    def restricted_sample_cn_profile(self):
+        return self.restricted_model_run_dir.joinpath("restricted_sample_cn_profiles.tsv.gz")
+
+    @property
     def run_input_dir(self):
         return self.sample_run_dir.joinpath("inputs")
 
@@ -120,6 +170,18 @@ class ConfigManager(object):
     @property
     def cfclone_results_file(self):
         return self.sample_run_dir.joinpath("cfclone_results.csv.gz")
+
+    @property
+    def raw_pigeons_summary(self):
+        return self.sample_run_dir.joinpath("Pigeons_summary.csv")
+
+    @property
+    def pigeons_summary(self):
+        return self.sample_run_dir.joinpath("full_model_pigeons_summary.tsv.gz")
+
+    @property
+    def sample_pigeons_summary(self):
+        return self.sample_run_dir.joinpath("all_models_pigeons_summary.tsv.gz")
 
     @property
     def sample_ctDNA_file(self):
@@ -172,6 +234,10 @@ class ConfigManager(object):
     @property
     def clonal_prevalence_table(self):
         return self.out_dir.joinpath("clonal_prevalence_table.tsv.gz")
+
+    @property
+    def all_pigeons_summary_table(self):
+        return self.out_dir.joinpath("all_samples_pigeons_summary.tsv.gz")
 
     @property
     def experiment_configuration(self):

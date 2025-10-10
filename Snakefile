@@ -1,3 +1,5 @@
+from random import sample
+
 from snakemake.io import expand, directory
 from snakemake.utils import min_version, validate
 
@@ -29,6 +31,7 @@ rule all:
         config_manager.clonal_prevalence_table,
         config_manager.experiment_configuration,
         config_manager.rho_dominance_plot,
+        config_manager.all_pigeons_summary_table,
     localrule: True
 
 
@@ -81,6 +84,23 @@ rule preprocess_clone_tree_create_colour_dict:
         "scripts/preprocess_input_tree.py"
 
 
+rule build_restricted_model_input:
+    input:
+        cn_profile=config_manager.sample_cn_profile,
+    output:
+        cn_profile=config_manager.restricted_sample_cn_profile,
+    params:
+        clone=lambda wildcards: wildcards.clone,
+    conda:
+        "envs/python.yaml"
+    log:
+        config_manager.get_log_file("build_restricted_model_input", "{sample}_{clone}.log"),
+    group:
+        "sample-pre-proc"
+    script:
+        "scripts/build_restricted_model_input.py"
+
+
 rule run_cfclone:
     input:
         cn_profile=config_manager.sample_cn_profile,
@@ -88,11 +108,13 @@ rule run_cfclone:
     output:
         results_dir=directory(config_manager.cfclone_sample_results_dir),
         samples_file=config_manager.cfclone_results_file,
+        pigeons_summary=config_manager.raw_pigeons_summary,
     threads: config_manager.cfclone_threads
     conda:
         "envs/cfclone.yaml"
     params:
         csv_path=config_manager.csv_path,
+        pigeons_summary=config_manager.raw_pigeons_summary_path,
         subsampling=config_manager.subsampling,
         n_rounds=config_manager.n_rounds,
         symmetrization=config_manager.symmetrization,
@@ -123,7 +145,77 @@ rule run_cfclone:
         (cfclone run-report --save-csv) >{log.report_log} 2>&1
         
         cp {params.csv_path} {output.samples_file}
+        
+        cp {params.pigeons_summary} {output.pigeons_summary}
         """
+
+
+use rule run_cfclone as run_cfclone_restricted_model with:
+    input:
+        cn_profile=config_manager.restricted_sample_cn_profile,
+        ctDNA_file=config_manager.sample_ctDNA_file,
+    output:
+        results_dir=directory(config_manager.restricted_cfclone_sample_results_dir),
+        samples_file=config_manager.restricted_cfclone_results_file,
+        pigeons_summary=config_manager.raw_restricted_pigeons_summary,
+    log:
+        infer_log=config_manager.get_log_file("run_cfclone", "{sample}_{clone}_infer.log"),
+        report_log=config_manager.get_log_file("run_cfclone", "{sample}_{clone}_report.log"),
+    benchmark:
+        config_manager.get_benchmark_file("run_cfclone", "{sample}_{clone}.txt")
+
+
+rule process_pigeons_summary:
+    input:
+        raw_pigeons_summary=config_manager.raw_pigeons_summary,
+    output:
+        pigeons_summary=config_manager.pigeons_summary,
+    conda:
+        "envs/python.yaml"
+    log:
+        config_manager.get_log_file("process_pigeons_summary", "{sample}.log"),
+    params:
+        model_used="full_model",
+        sample_id=lambda wildcards: wildcards.sample,
+    script:
+        "scripts/process_pigeons_summary.py"
+
+
+use rule process_pigeons_summary as process_restricted_model_pigeons_summary with:
+    input:
+        raw_pigeons_summary=config_manager.raw_restricted_pigeons_summary,
+    output:
+        pigeons_summary=config_manager.restricted_pigeons_summary,
+    log:
+        config_manager.get_log_file("process_pigeons_summary", "{sample}_{clone}.log"),
+    params:
+        model_used=config_manager.get_restricted_model_name,
+        sample_id=lambda wildcards: wildcards.sample,
+
+
+rule gather_sample_pigeons_summaries:
+    input:
+        expand(
+            config_manager.restricted_pigeons_summary,
+            sample=lambda wildcards: wildcards.sample,
+            clone=config_manager.clones,
+        ),
+        config_manager.pigeons_summary,
+    output:
+        out_table=config_manager.sample_pigeons_summary,
+    log:
+        config_manager.get_log_file("gather_sample_pigeons_summaries", "{sample}.log"),
+    script:
+        "scripts/gather_tables.py"
+
+
+use rule gather_sample_pigeons_summaries as gather_all_pigeons_summaries with:
+    input:
+        expand(config_manager.sample_pigeons_summary, sample=config_manager.sample_list),
+    output:
+        out_table=config_manager.all_pigeons_summary_table,
+    log:
+        config_manager.get_log_file("", "gather_all_pigeons_summaries.log"),
 
 
 rule create_clonal_rho_table_from_cfClone_result:
