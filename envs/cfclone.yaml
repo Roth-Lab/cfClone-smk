@@ -1,7 +1,18 @@
 channels:
   - conda-forge
 dependencies:
+  - python>=3.12
+  - arviz
+  - click>=8.0
   - cxx-compiler
-  - make
-  - tbb-devel
+  - h5py
   - juliaup
+  - make
+  - numpy
+  - pandas
+  - tbb-devel
+  - pyjuliacall>=0.9.22
+  - pyjuliapkg
+  - pip
+  - pip:
+      - "git+ssh://git@github.com/aroth85/cfclone@EH-Dev"
