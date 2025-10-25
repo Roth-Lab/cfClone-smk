@@ -12,26 +12,27 @@ properties:
     minLength: 1
     description: Path to pipeline working directory
 
-  sample_tsv:
+  clonal_cn_file:
     type: string
     minLength: 1
-    description: Path to bulk sample paths .tsv file, please ensure it complies with the required format
-  clonal_cn_bed:
-    type: string
-    minLength: 1
-    description: Path to input clonal copy-number profiles .bed
+    description: Path to input clonal copy-number profiles
   clone_tree_newick:
     type: string
     minLength: 1
     description: Path to input clonal copy-number tree, in newick (.nwk) format
+  ctdna_files:
+    type: object
+    minProperties: 1
+    description: Key value pairs of sample IDs and paths to the assosciated ctDNA file
+
   num_chains:
     type: integer
     minimum: 1
-    default: 12
+    default: 16
   num_chains_vi:
     type: integer
     minimum: 1
-    default: 12
+    default: 8
   num_rounds:
     type: integer
     minimum: 1
@@ -40,55 +41,3 @@ properties:
     type: integer
     minimum: 1
     default: 10
-#   cfClone:
-#     type: object
-#     description: cfClone run parameters, please refer to cfClone documentation for details
-#     properties:
-#       subsampling:
-#         type: integer
-#         minimum: 1
-#         default: 1
-#       n_rounds:
-#         type: integer
-#         minimum: 1
-#         default: 10
-#       num_threads:
-#         type: integer
-#         minimum: 1
-#         default: 10
-#       symmetrization:
-#         type: number
-#         default: 0.5
-#         enum:
-#           - 0.0
-#           - 0.5
-#           - 1.0
-#       rdr_likelihood:
-#         type: string
-#         description: cfClone rdr-likelihood to use
-#         minLength: 1
-#         default: "TDistribution"
-#         enum:
-#           - "Disable"
-#           - "TDistribution"
-#           - "TMix"
-#       baf_likelihood:
-#         type: string
-#         description: cfClone baf-likelihood to use
-#         minLength: 1
-#         default: "BetaBinomial"
-#         enum:
-#           - "Disable"
-#           - "Binomial"
-#           - "BetaBinomial"
-#           - "BetaBinomialMix"
-#       keep_only_normal:
-#         type: boolean
-#         description: Whether to only keep the normal clone, refer to cfClone documentation for details
-#         default: false
-
-# required:
-#   - sample_tsv
-#   - out_dir
-#   - clonal_cn_bed
-#   - clone_tree_newick

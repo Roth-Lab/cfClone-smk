@@ -1,5 +1,6 @@
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 
 def _get_default_cfclone_settings_dict():
@@ -66,8 +67,16 @@ class ConfigManager(object):
 
     @property
     def post_process_results(self):
-        return ["dominance_prob", "pairwise_ranks", "prevalence_samples", "prevalence_stats", "samples",
-                "tumour_content"]
+        return [
+            "dominance_prob",
+            "pairwise_ranks",
+            "parameter_summaries",
+            "prevalence_samples",
+            "prevalence_stats",
+            "samples",
+            "summary",
+            "tumour_content",
+        ]
 
     @property
     def run_types(self):
@@ -94,34 +103,91 @@ class ConfigManager(object):
     def sample_out_dir(self):
         return self.out_dir.joinpath("{sample}")
 
+    @property
+    def sample_tmp_dir(self):
+        return self.tmp_dir.joinpath("{sample}")
+
+    @property
+    def tmp_dir(self):
+        return self.pipeline_dir.joinpath("tmp")
+
     # Input files
     @property
     def clone_cn_file(self):
-        return self.config["clone_cn_file"]
+        return Path(self.config["clone_cn_file"]).resolve()
+
+    @property
+    def clone_tree_file(self):
+        return Path(self.config["clone_tree_newick"]).resolve()
 
     def get_ctdna_file(self, wc):
         return self._get_ctdna_file(wc.sample)
 
     # Pipeline files
     @property
+    def ancestral_prevalence_template(self):
+        return self.sample_out_dir.joinpath("tables", "ancestral_prevalence.tsv.gz")
+
+    @property
+    def clone_prevalence_tree_template(self):
+        return self.sample_out_dir.joinpath("trees", "prevalence_tree.json")
+
+    @property
+    def clone_prevalences_plot(self):
+        return self.sample_out_dir.joinpath("plots", "clone_prevalences.pdf")
+
+    @property
+    def evidence_template(self):
+        return self.sample_out_dir.joinpath("tables", "evidence.tsv")
+
+    @property
+    def experiment_configuration(self):
+        return self.out_dir.joinpath("config.yaml")
+
+    @property
     def fit_template(self):
         return self.sample_out_dir.joinpath("fit", "{run_type}.h5")
 
     @property
+    def fit_plot_template(self):
+        return self.sample_out_dir.joinpath("plots", "fit.pdf")
+
+    @property
+    def pairwise_ranks_plot(self):
+        return self.sample_out_dir.joinpath("plots", "pairwise_ranks.pdf")
+
+    @property
     def post_process_template(self):
-        return self.sample_out_dir.joinpath("raw", "{run_type}", "{pp_result}.tsv")
+        return self.sample_out_dir.joinpath("tables", "{pp_result}.tsv")
+
+    @property
+    def run_type_evidence_template(self):
+        return self.sample_tmp_dir.joinpath("evidence", "{run_type}.csv")
 
     @property
     def pipeline_files(self):
         files = []
-        # for s in self.samples:
-        #     files.append(str(self.dominance_prob_template).format(sample=s))
-        #     files.append(str(self.pairwise_ranks_template).format(sample=s))
-        #     files.append(str(self.prevalence_stats_template).format(sample=s))
-        for r in self.run_types:
-            for p in self.post_process_results:
-                for s in self.samples:
-                    files.append(str(self.post_process_template).format(pp_result=p, run_type=r, sample=s))
+
+        files.append(self.experiment_configuration)
+
+        for s in self.samples:
+            files.append(str(self.clone_prevalences_plot).format(sample=s))
+
+            files.append(str(self.evidence_template).format(sample=s))
+
+            files.append(str(self.fit_plot_template).format(sample=s))
+
+            files.append(str(self.pairwise_ranks_plot).format(sample=s))
+
+            for r in self.run_types:
+                if r == "full":
+                    for p in self.post_process_results:
+                        files.append(
+                            str(self.post_process_template).format(
+                                pp_result=p, sample=s
+                            )
+                        )
+
         return files
 
     # Helper functions
