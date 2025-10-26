@@ -6,7 +6,7 @@ min_version("9.4")
 
 validate(config,"schemas/config.schema.yaml")
 
-include: "utils.py"
+include: workflow.source_path("utils.py")
 
 config = ConfigManager(config)
 
