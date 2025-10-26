@@ -20,29 +20,10 @@ class ConfigManager(object):
     def __init__(self, config):
         self.config = config
 
-        # self.sample_df = self._load_sample_df()
-
-        # self.sample_list = list(self.sample_df["sample_id"].unique())
-
-        # self.sample_df.set_index("sample_id", inplace=True)
-
-        # self.csv_path = Path("").joinpath("results", "latest", "samples.csv.gz")
-
-        # self.raw_pigeons_summary_path = Path("").joinpath(
-        #     "results", "latest", "build", "Pigeons_summary.csv"
-        # )
-
-        # self._load_cfclone_settings()
-
-        # self.cfclone_settings = self.config["cfClone"]
-
-        # self.clones = self.get_clone_list()
-
     # Params
     @property
     def clones(self):
-        df = pd.read_csv(self.clone_cn_file, sep="\t")
-        return df["clone"].unique()
+        return self.config["clones"]
 
     @property
     def samples(self):
