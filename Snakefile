@@ -2,7 +2,7 @@ from snakemake.utils import min_version, validate
 
 min_version("9.4")
 
-#conda: "envs/global.yaml"
+conda: workflow.source_path("envs/global.yaml")
 
 validate(config,"schemas/config.schema.yaml")
 
