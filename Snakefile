@@ -2,16 +2,13 @@ from snakemake.utils import min_version, validate
 
 min_version("9.4")
 
-
 conda: "envs/global.yaml"
 
+validate(config,"schemas/config.schema.yaml")
 
-validate(config, "schemas/config.schema.yaml")
-
-from utils import ConfigManager
+include: "utils.py"
 
 config = ConfigManager(config)
-
 
 ruleorder: merge_evidence > post_process_full_result
 
@@ -54,11 +51,11 @@ rule run_cfclone:
 
 rule post_process_full_result:
     input:
-        lambda wildcards: str(config.fit_template).format(sample=wildcards.sample, run_type="full"),
+        lambda wildcards: str(config.fit_template).format(sample=wildcards.sample,run_type="full"),
     output:
         config.post_process_template,
     params:
-        lambda wildcards: wildcards.pp_result.replace("_", "-"),
+        lambda wildcards: wildcards.pp_result.replace("_","-"),
     conda:
         "envs/cfclone.yaml"
     log:
@@ -69,7 +66,7 @@ rule post_process_full_result:
 
 rule write_ancestral_prevlances:
     input:
-        i=lambda wildcards: str(config.fit_template).format(sample=wildcards.sample, run_type="full"),
+        i=lambda wildcards: str(config.fit_template).format(sample=wildcards.sample,run_type="full"),
         t=config.clone_tree_file,
     output:
         o=config.ancestral_prevalence_template,
@@ -99,17 +96,19 @@ rule write_evidence:
 rule merge_evidence:
     input:
         lambda wildcards: [
-            str(config.run_type_evidence_template).format(run_type=r, sample=wildcards.sample)
+            str(config.run_type_evidence_template).format(run_type=r,sample=wildcards.sample)
             for r in config.run_types
         ],
     output:
         config.evidence_template,
+    params:
+        script=workflow.source_path("scripts/merge_evidence.py"),
     conda:
         "envs/python.yaml"
     log:
         config.get_log_file(config.evidence_template),
     shell:
-        "(python scripts/merge_evidence.py -i {input} -o {output}) >{log} 2>&1"
+        "(python {params.script} -i {input} -o {output}) >{log} 2>&1"
 
 
 rule plot_clone_prevalences:
@@ -118,43 +117,49 @@ rule plot_clone_prevalences:
         t=config.clone_prevalence_tree_template,
     output:
         config.clone_prevalences_plot,
+    params:
+        script=workflow.source_path("scripts/plot_clone_prevalences.py"),
     conda:
         "envs/plot.yaml"
     log:
         config.get_log_file(config.clone_prevalence_tree_template),
     shell:
-        "(python scripts/plot_clone_prevalences.py -d {input.d} -t {input.t} -o {output}) >{log} 2>&1"
+        "(python {params.script} -d {input.d} -t {input.t} -o {output}) >{log} 2>&1"
 
 
 rule plot_fit:
     input:
         lambda wildcards: str(config.post_process_template).format(
-            pp_result="parameter_summaries", run_type="full", sample=wildcards.sample
+            pp_result="parameter_summaries",run_type="full",sample=wildcards.sample
         ),
     output:
         config.fit_plot_template,
+    params:
+        script=workflow.source_path("scripts/plot_fit.py"),
     conda:
         "envs/plot.yaml"
     log:
         config.get_log_file(config.fit_plot_template),
     shell:
-        "(python scripts/plot_fit.py -i {input} -o {output}) >{log} 2>&1"
+        "(python {params.script} -i {input} -o {output}) >{log} 2>&1"
 
 
 rule plot_pairwsie_ranks:
     input:
         i=lambda wildcards: str(config.post_process_template).format(
-            pp_result="pairwise_ranks", run_type="full", sample=wildcards.sample
+            pp_result="pairwise_ranks",run_type="full",sample=wildcards.sample
         ),
         t=config.clone_tree_file,
     output:
         config.pairwise_ranks_plot,
+    params:
+        script=workflow.source_path("scripts/plot_pairwise_ranks.py"),
     conda:
         "envs/plot.yaml"
     log:
         config.get_log_file(config.pairwise_ranks_plot),
     shell:
-        "(python scripts/plot_pairwise_ranks.py -i {input.i} -t {input.t} -o {output}) >{log} 2>&1"
+        "(python {params.script} -i {input.i} -t {input.t} -o {output}) >{log} 2>&1"
 
 
 rule save_run_configuration:
@@ -166,7 +171,5 @@ rule save_run_configuration:
         "envs/python.yaml"
     params:
         run_config=config.config,
-    group:
-        "pre-proc"
     script:
         "scripts/save_run_configuration.py"

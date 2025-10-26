@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
 
-from plot_utils import setup_plot, setup_axes
-
 
 def main(args):
     df = pd.read_table(args.in_df_file)
 
-    colors = create_clone_color_dict(df.loc[~df["clone_id"].str.startswith("ancestral_"), "clone_id"].unique())
+    colors = create_clone_color_dict(
+        df.loc[~df["clone_id"].str.startswith("ancestral_"), "clone_id"].unique()
+    )
 
     with open(args.in_tree_file) as f:
         tree = nx.node_link_graph(json.load(f), edges="edges")
@@ -118,6 +118,45 @@ def create_clone_color_dict(node_names):
     gt_colour_dict = dict(zip(node_names, colour_list))
 
     return gt_colour_dict
+
+
+def setup_plot(font_size=None):
+    """
+    Set up matplotlib in a consistent way between plots.
+    """
+    plt.rcParams['font.family'] = ' sans-serif'
+    plt.rcParams['font.sans-serif'] = [
+        'Helvetica',
+        'Nimbus Sans',
+        'Liberation Sans',
+        'DejaVu Sans',
+        'Arial',
+    ]
+    plt.rcParams['axes.facecolor'] = 'white'
+    plt.rcParams['grid.color'] = 'darkgrey'
+    if font_size is not None:
+        plt.rcParams["font.size"] = font_size
+
+
+def setup_axes(ax):
+    """
+    Set up axes in a consistent way between plots.  Spines are at left and bottom, offset by 10pts.
+    Other spines not visible.  Ticks only for left and bottom.
+    """
+    ax.spines['left'].set_position(('outward', 10))
+    ax.spines['bottom'].set_position(('outward', 10))
+    ax.spines['left'].set_color('black')
+    ax.spines['bottom'].set_color('black')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    ax.xaxis.tick_bottom()
+    ax.yaxis.tick_left()
+
+    ax.xaxis.grid(True, which="major", linestyle=':')
+    ax.yaxis.grid(True, which="major", linestyle=':')
+
+    return ax
 
 
 if __name__ == "__main__":
