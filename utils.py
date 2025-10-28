@@ -1,50 +1,33 @@
-from pathlib import Path
-
 import pandas as pd
+import yaml
 
-
-def _get_default_cfclone_settings_dict():
-    default_params = {
-        "subsampling": 1,
-        "n_rounds": 10,
-        "num_threads": 10,
-        "symmetrization": 0.5,
-        "rdr_likelihood": "TDistribution",
-        "baf_likelihood": "BetaBinomial",
-        "keep_only_normal": False,
-    }
-    return default_params
+from pathlib import Path
 
 
 class ConfigManager(object):
     def __init__(self, config):
         self.config = config
 
+    @property
+    def config_yaml(self):
+        return yaml.dump(self.config)
+
     # Params
     @property
-    def clones(self):
-        return self.config["clones"]
-
-    @property
-    def samples(self):
-        return self.config["ctdna_files"].keys()
-
-    # cfClone params
-    @property
     def num_chains(self):
-        return self.config["num_chains"]
+        return self.config.get("num_chains", 16)
 
     @property
     def num_chains_vi(self):
-        return self.config["num_chains_vi"]
+        return self.config.get("num_chains_vi", 8)
 
     @property
     def num_rounds(self):
-        return self.config["num_rounds"]
+        return self.config.get("num_rounds", 10)
 
     @property
     def num_threads(self):
-        return self.config["num_threads"]
+        return self.config.get("num_threads", 1)
 
     @property
     def post_process_results(self):
@@ -59,11 +42,15 @@ class ConfigManager(object):
             "tumour_content",
         ]
 
-    @property
-    def run_types(self):
-        return ["full", "normal"] + ["clone_{}".format(x) for x in self.clones]
-
     # Directories
+    @property
+    def out_dir(self):
+        return Path(self.config.get("out_dir", "<out_dir>"))
+
+    @property
+    def pipeline_dir(self):
+        return Path(self.config.get("pipeline_dir", "<pipeline_dir>"))
+
     @property
     def benchmark_dir(self):
         return self.pipeline_dir.joinpath("benchmark")
@@ -71,22 +58,6 @@ class ConfigManager(object):
     @property
     def log_dir(self):
         return self.pipeline_dir.joinpath("log")
-
-    @property
-    def out_dir(self):
-        return Path(self.config["out_dir"])
-
-    @property
-    def pipeline_dir(self):
-        return Path(self.config["pipeline_dir"])
-
-    @property
-    def sample_out_dir(self):
-        return self.out_dir.joinpath("{sample}")
-
-    @property
-    def sample_tmp_dir(self):
-        return self.tmp_dir.joinpath("{sample}")
 
     @property
     def tmp_dir(self):
@@ -101,25 +72,34 @@ class ConfigManager(object):
     def clone_tree_file(self):
         return Path(self.config["clone_tree_newick"]).resolve()
 
-    def get_ctdna_file(self, wc):
-        return self._get_ctdna_file(wc.sample)
+    @property
+    def ctdna_file(self):
+        return Path(self.config["ctdna_file"]).resolve()
 
     # Pipeline files
     @property
-    def ancestral_prevalence_template(self):
-        return self.sample_out_dir.joinpath("tables", "ancestral_prevalence.tsv.gz")
+    def ancestral_prevalence_file(self):
+        return self.out_dir.joinpath("tables", "ancestral_prevalence.tsv.gz")
 
     @property
-    def clone_prevalence_tree_template(self):
-        return self.sample_out_dir.joinpath("trees", "prevalence_tree.json")
+    def dominance_prob_file(self):
+        return self.out_dir.joinpath("tables", "dominance_prob.tsv")
+
+    @property
+    def clone_prevalence_tree_file(self):
+        return self.out_dir.joinpath("trees", "prevalence_tree.json")
 
     @property
     def clone_prevalences_plot(self):
-        return self.sample_out_dir.joinpath("plots", "clone_prevalences.pdf")
+        return self.out_dir.joinpath("plots", "clone_prevalences.pdf")
 
     @property
-    def evidence_template(self):
-        return self.sample_out_dir.joinpath("tables", "evidence.tsv")
+    def run_type_sentinel_dir(self):
+        return self.tmp_dir.joinpath("run_type_sentinels")
+
+    @property
+    def evidence_file(self):
+        return self.out_dir.joinpath("tables", "evidence.tsv")
 
     @property
     def experiment_configuration(self):
@@ -127,49 +107,48 @@ class ConfigManager(object):
 
     @property
     def fit_template(self):
-        return self.sample_out_dir.joinpath("fit", "{run_type}.h5")
+        return self.out_dir.joinpath("fit", "{run_type}.h5")
 
     @property
-    def fit_plot_template(self):
-        return self.sample_out_dir.joinpath("plots", "fit.pdf")
+    def fit_plot(self):
+        return self.out_dir.joinpath("plots", "fit.pdf")
+
+    @property
+    def pairwise_ranks_file(self):
+        return self.out_dir.joinpath("tables", "pairwise_ranks.tsv")
 
     @property
     def pairwise_ranks_plot(self):
-        return self.sample_out_dir.joinpath("plots", "pairwise_ranks.pdf")
+        return self.out_dir.joinpath("plots", "pairwise_ranks.pdf")
 
     @property
-    def post_process_template(self):
-        return self.sample_out_dir.joinpath("tables", "{pp_result}.tsv")
+    def parameter_summaries_file(self):
+        return self.out_dir.joinpath("tables", "parameter_summaries.tsv.gz")
+
+    @property
+    def summary_file(self):
+        return self.out_dir.joinpath("tables", "summary.tsv")
+
+    @property
+    def tumour_content_file(self):
+        return self.out_dir.joinpath("tables", "tumour_content.tsv")
 
     @property
     def run_type_evidence_template(self):
-        return self.sample_tmp_dir.joinpath("evidence", "{run_type}.csv")
+        return self.tmp_dir.joinpath("evidence", "{run_type}.csv")
 
     @property
     def pipeline_files(self):
-        files = []
-
-        files.append(self.experiment_configuration)
-
-        for s in self.samples:
-            files.append(str(self.clone_prevalences_plot).format(sample=s))
-
-            files.append(str(self.evidence_template).format(sample=s))
-
-            files.append(str(self.fit_plot_template).format(sample=s))
-
-            files.append(str(self.pairwise_ranks_plot).format(sample=s))
-
-            for r in self.run_types:
-                if r == "full":
-                    for p in self.post_process_results:
-                        files.append(
-                            str(self.post_process_template).format(
-                                pp_result=p, sample=s
-                            )
-                        )
-
-        return files
+        return [
+            self.ancestral_prevalence_file,
+            self.clone_prevalences_plot,
+            self.evidence_file,
+            self.experiment_configuration,
+            self.fit_plot,
+            self.pairwise_ranks_plot,
+            self.summary_file,
+            self.tumour_content_file,
+        ]
 
     # Helper functions
     def get_benchmark_file(self, template):
@@ -194,7 +173,8 @@ class ConfigManager(object):
             return "--use-clone {}".format(clone)
 
     def _get_ctdna_file(self, sample):
-        return self.config["ctdna_files"][sample]
+        df = pd.read_csv(self.ctdna_paths_file, index_col="sample", sep="\t")
+        return Path(df.loc[sample]["path"]).resolve()
 
     def _get_relative_path(self, template):
         try:

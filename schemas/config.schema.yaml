@@ -20,10 +20,10 @@ properties:
     type: string
     minLength: 1
     description: Path to input clonal copy-number tree, in newick (.nwk) format
-  ctdna_files:
-    type: object
+  ctdna_file:
+    type: string
     minProperties: 1
-    description: Key value pairs of sample IDs and paths to the assosciated ctDNA file
+    description: Path to input ctDNA file
 
   num_chains:
     type: integer

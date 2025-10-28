@@ -1,16 +1,22 @@
+import os
+
 from snakemake.utils import min_version, validate
 
 min_version("9.4")
 
+
 conda: workflow.source_path("envs/global.yaml")
 
-validate(config,"schemas/config.schema.yaml")
+
+validate(config, "schemas/config.schema.yaml")
+
+# from utils import ConfigManager
+
 
 include: workflow.source_path("utils.py")
 
-config = ConfigManager(config)
 
-ruleorder: merge_evidence > post_process_full_result
+config = ConfigManager(config)
 
 
 rule all:
@@ -19,10 +25,25 @@ rule all:
     localrule: True
 
 
+checkpoint write_run_type_sentinels:
+    input:
+        config.clone_cn_file,
+    output:
+        temp(directory(config.run_type_sentinel_dir)),
+    params:
+        script=workflow.source_path("scripts/write_run_type_sentinels.py"),
+    conda:
+        "envs/python.yaml"
+    log:
+        config.log_dir.joinpath("write_run_type_sentinels.log"),
+    shell:
+        "(python {params.script} -i {input} -o {output}) >{log} 2>&1"
+
+
 rule run_cfclone:
     input:
         c=config.clone_cn_file,
-        i=config.get_ctdna_file,
+        i=config.ctdna_file,
     output:
         config.fit_template,
     params:
@@ -49,34 +70,84 @@ rule run_cfclone:
         "{params.rt})  >{log} 2>&1"
 
 
-rule post_process_full_result:
-    input:
-        lambda wildcards: str(config.fit_template).format(sample=wildcards.sample,run_type="full"),
-    output:
-        config.post_process_template,
-    params:
-        lambda wildcards: wildcards.pp_result.replace("_","-"),
-    conda:
-        "envs/cfclone.yaml"
-    log:
-        config.get_log_file(config.post_process_template),
-    shell:
-        "(cfclone write-{params} -i {input} -o {output}) >{log} 2>&1"
-
-
 rule write_ancestral_prevlances:
     input:
-        i=lambda wildcards: str(config.fit_template).format(sample=wildcards.sample,run_type="full"),
+        i=str(config.fit_template).format(run_type="full"),
         t=config.clone_tree_file,
     output:
-        o=config.ancestral_prevalence_template,
-        t=config.clone_prevalence_tree_template,
+        o=config.ancestral_prevalence_file,
+        t=config.clone_prevalence_tree_file,
     conda:
         "envs/cfclone.yaml"
     log:
-        config.get_log_file(config.ancestral_prevalence_template),
+        config.get_log_file(config.ancestral_prevalence_file),
     shell:
         "(cfclone write-ancestral-prevalences -c {input.t} -i {input.i} -o {output.o} -t {output.t}) >{log} 2>&1"
+
+
+rule write_dominance_prob:
+    input:
+        str(config.fit_template).format(run_type="full"),
+    output:
+        config.dominance_prob_file,
+    conda:
+        "envs/cfclone.yaml"
+    log:
+        config.get_log_file(config.dominance_prob_file),
+    shell:
+        "(cfclone write-dominance-prob -i {input} -o {output}) >{log} 2>&1"
+
+
+rule write_pairwise_ranks_file:
+    input:
+        str(config.fit_template).format(run_type="full"),
+    output:
+        config.pairwise_ranks_file,
+    conda:
+        "envs/cfclone.yaml"
+    log:
+        config.get_log_file(config.pairwise_ranks_file),
+    shell:
+        "(cfclone write-pairwise-ranks -i {input} -o {output}) >{log} 2>&1"
+
+
+rule write_parameter_summaries_file:
+    input:
+        str(config.fit_template).format(run_type="full"),
+    output:
+        config.parameter_summaries_file,
+    conda:
+        "envs/cfclone.yaml"
+    log:
+        config.get_log_file(config.parameter_summaries_file),
+    shell:
+        "(cfclone write-parameter-summaries -i {input} -o {output}) >{log} 2>&1"
+
+
+rule write_summary_file:
+    input:
+        str(config.fit_template).format(run_type="full"),
+    output:
+        config.summary_file,
+    conda:
+        "envs/cfclone.yaml"
+    log:
+        config.get_log_file(config.summary_file),
+    shell:
+        "(cfclone write-summary -i {input} -o {output}) >{log} 2>&1"
+
+
+rule write_tumour_content_file:
+    input:
+        str(config.fit_template).format(run_type="full"),
+    output:
+        config.tumour_content_file,
+    conda:
+        "envs/cfclone.yaml"
+    log:
+        config.get_log_file(config.tumour_content_file),
+    shell:
+        "(cfclone write-tumour-content -i {input} -o {output}) >{log} 2>&1"
 
 
 rule write_evidence:
@@ -89,32 +160,34 @@ rule write_evidence:
     log:
         config.get_log_file(config.run_type_evidence_template),
     shell:
-        "(echo -n {wildcards.sample},{wildcards.run_type}, > {output}; "
+        "(echo -n {wildcards.run_type}, > {output}; "
         "cfclone print-model-evidence -i{input} >> {output}) 2>{log}"
+
+
+def get_runtypes(wildcards):
+    checkpoint_output = checkpoints.write_run_type_sentinels.get(**wildcards).output[0]
+    return glob_wildcards(os.path.join(checkpoint_output, "{run_type}.txt")).run_type
 
 
 rule merge_evidence:
     input:
-        lambda wildcards: [
-            str(config.run_type_evidence_template).format(run_type=r,sample=wildcards.sample)
-            for r in config.run_types
-        ],
+        expand(config.run_type_evidence_template, run_type=get_runtypes),
     output:
-        config.evidence_template,
+        config.evidence_file,
     params:
         script=workflow.source_path("scripts/merge_evidence.py"),
     conda:
         "envs/python.yaml"
     log:
-        config.get_log_file(config.evidence_template),
+        config.get_log_file(config.evidence_file),
     shell:
         "(python {params.script} -i {input} -o {output}) >{log} 2>&1"
 
 
 rule plot_clone_prevalences:
     input:
-        d=config.ancestral_prevalence_template,
-        t=config.clone_prevalence_tree_template,
+        d=config.ancestral_prevalence_file,
+        t=config.clone_prevalence_tree_file,
     output:
         config.clone_prevalences_plot,
     params:
@@ -122,33 +195,29 @@ rule plot_clone_prevalences:
     conda:
         "envs/plot.yaml"
     log:
-        config.get_log_file(config.clone_prevalence_tree_template),
+        config.get_log_file(config.clone_prevalence_tree_file),
     shell:
         "(python {params.script} -d {input.d} -t {input.t} -o {output}) >{log} 2>&1"
 
 
 rule plot_fit:
     input:
-        lambda wildcards: str(config.post_process_template).format(
-            pp_result="parameter_summaries",run_type="full",sample=wildcards.sample
-        ),
+        config.parameter_summaries_file,
     output:
-        config.fit_plot_template,
+        config.fit_plot,
     params:
         script=workflow.source_path("scripts/plot_fit.py"),
     conda:
         "envs/plot.yaml"
     log:
-        config.get_log_file(config.fit_plot_template),
+        config.get_log_file(config.fit_plot),
     shell:
         "(python {params.script} -i {input} -o {output}) >{log} 2>&1"
 
 
 rule plot_pairwsie_ranks:
     input:
-        i=lambda wildcards: str(config.post_process_template).format(
-            pp_result="pairwise_ranks",run_type="full",sample=wildcards.sample
-        ),
+        i=config.pairwise_ranks_file,
         t=config.clone_tree_file,
     output:
         config.pairwise_ranks_plot,
@@ -164,12 +233,12 @@ rule plot_pairwsie_ranks:
 
 rule save_run_configuration:
     output:
-        run_config=config.experiment_configuration,
+        config.experiment_configuration,
+    params:
+        config.config_yaml,
     log:
         config.log_dir.joinpath("save_run_configuration.log"),
     conda:
         "envs/python.yaml"
-    params:
-        run_config=config.config,
-    script:
-        "scripts/save_run_configuration.py"
+    shell:
+        "(echo \"{params}\" > {output}) 2>{log}"
