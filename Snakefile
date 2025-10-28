@@ -25,6 +25,13 @@ rule all:
     localrule: True
 
 
+if config.run_single_clone_model:
+    run_type_shell_cmd = "python {params.script} -i {input} -o {output}"
+
+else:
+    run_type_shell_cmd = "mkdir -p {output}; touch {output}/full.txt; touch {output}/normal.txt;"
+
+
 checkpoint write_run_type_sentinels:
     input:
         config.clone_cn_file,
@@ -34,10 +41,11 @@ checkpoint write_run_type_sentinels:
         script=workflow.source_path("scripts/write_run_type_sentinels.py"),
     conda:
         "envs/python.yaml"
+    # noinspection SmkUnusedLogFile
     log:
         config.log_dir.joinpath("write_run_type_sentinels.log"),
     shell:
-        "(python {params.script} -i {input} -o {output}) >{log} 2>&1"
+        "({}) >{{log}} 2>&1".format(run_type_shell_cmd)
 
 
 rule run_cfclone:

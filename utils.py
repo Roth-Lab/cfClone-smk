@@ -30,17 +30,8 @@ class ConfigManager(object):
         return self.config.get("num_threads", 1)
 
     @property
-    def post_process_results(self):
-        return [
-            "dominance_prob",
-            "pairwise_ranks",
-            "parameter_summaries",
-            "prevalence_samples",
-            "prevalence_stats",
-            "samples",
-            "summary",
-            "tumour_content",
-        ]
+    def run_single_clone_model(self):
+        return self.config.get("run_single_clone_model", False)
 
     # Directories
     @property
@@ -171,10 +162,6 @@ class ConfigManager(object):
         else:
             clone = run_type.split("_")[-1]
             return "--use-clone {}".format(clone)
-
-    def _get_ctdna_file(self, sample):
-        df = pd.read_csv(self.ctdna_paths_file, index_col="sample", sep="\t")
-        return Path(df.loc[sample]["path"]).resolve()
 
     def _get_relative_path(self, template):
         try:

@@ -29,15 +29,23 @@ properties:
     type: integer
     minimum: 1
     default: 16
+    description: Number of parallel tempering chains used for reference distribution
   num_chains_vi:
     type: integer
     minimum: 1
     default: 8
+    description: Number of parallel tempering chains used for variational distribution
   num_rounds:
     type: integer
     minimum: 1
     default: 10
+    description: Number of rounds of sampling
   num_threads:
     type: integer
     minimum: 1
     default: 10
+    description: Number of threads to use for sampling
+  run_single_clone_model:
+    type: boolean
+    default: false
+    description: Whether to run cfclone with additional models including only a single clone and the normal population
