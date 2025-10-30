@@ -92,7 +92,7 @@ def plot_clone_tree(colors, tree, tree_ax):
 
         w = tree.nodes[n]["prevalence_stats"]["mean_prevalence"]
 
-        node_sizes.append((72 * w) ** 2)
+        node_sizes.append(512 * (w ** (3 / 2)))
 
     nx.draw_networkx(
         tree,
