@@ -17,6 +17,9 @@ def main(args):
 
     df.index = df.index.astype(str)
 
+    for i in range(df.shape[0]):
+        df.iloc[i, i] = np.nan
+
     tree = TreeNode.read(args.tree_file, convert_underscores=False)
 
     cmap_greater_than = mcolors.LinearSegmentedColormap.from_list(
@@ -27,10 +30,12 @@ def main(args):
         df,
         cmap=cmap_greater_than,
         cbar_kws={'label': r"$P(\rho_{i} > \rho_{j})$"},
-        col_cluster=False,
+        col_tree=tree,
         row_tree=tree,
         use_branch_lengths=False,
         label=True,
+        vmin=0,
+        vmax=1,
     )
 
     fig.ax_heatmap.set(
