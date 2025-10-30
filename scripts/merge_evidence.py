@@ -7,7 +7,7 @@ def main(args):
 
     for file_name in args.in_files:
         rt_df = pd.read_csv(
-            file_name, header=None, names=["sample", "run_type", "evidence"]
+            file_name, header=None, names=["run_type", "evidence"]
         )
 
         df.append(rt_df)
