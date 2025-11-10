@@ -87,6 +87,8 @@ rule write_ancestral_prevlances:
         t=config.clone_prevalence_tree_file,
     conda:
         "envs/cfclone.yaml"
+    group:
+        "post_process"
     log:
         config.get_log_file(config.ancestral_prevalence_file),
     shell:
@@ -100,6 +102,8 @@ rule write_dominance_prob:
         config.dominance_prob_file,
     conda:
         "envs/cfclone.yaml"
+    group:
+        "post_process"
     log:
         config.get_log_file(config.dominance_prob_file),
     shell:
@@ -113,6 +117,8 @@ rule write_pairwise_ranks_file:
         config.pairwise_ranks_file,
     conda:
         "envs/cfclone.yaml"
+    group:
+        "post_process"
     log:
         config.get_log_file(config.pairwise_ranks_file),
     shell:
@@ -126,6 +132,8 @@ rule write_parameter_summaries_file:
         config.parameter_summaries_file,
     conda:
         "envs/cfclone.yaml"
+    group:
+        "post_process"
     log:
         config.get_log_file(config.parameter_summaries_file),
     shell:
@@ -139,6 +147,8 @@ rule write_summary_file:
         config.summary_file,
     conda:
         "envs/cfclone.yaml"
+    group:
+        "post_process"
     log:
         config.get_log_file(config.summary_file),
     shell:
@@ -152,6 +162,8 @@ rule write_tumour_content_file:
         config.tumour_content_file,
     conda:
         "envs/cfclone.yaml"
+    group:
+        "post_process"
     log:
         config.get_log_file(config.tumour_content_file),
     shell:
@@ -165,6 +177,8 @@ rule write_evidence:
         temp(config.run_type_evidence_template),
     conda:
         "envs/cfclone.yaml"
+    group:
+        "post_process"
     log:
         config.get_log_file(config.run_type_evidence_template),
     shell:
@@ -186,6 +200,8 @@ rule merge_evidence:
         script=workflow.source_path("scripts/merge_evidence.py"),
     conda:
         "envs/python.yaml"
+    group:
+        "post_process"
     log:
         config.get_log_file(config.evidence_file),
     shell:
@@ -202,6 +218,8 @@ rule plot_clone_prevalences:
         script=workflow.source_path("scripts/plot_clone_prevalences.py"),
     conda:
         "envs/plot.yaml"
+    group:
+        "post_process"
     log:
         config.get_log_file(config.clone_prevalence_tree_file),
     shell:
@@ -217,6 +235,8 @@ rule plot_fit:
         script=workflow.source_path("scripts/plot_fit.py"),
     conda:
         "envs/plot.yaml"
+    group:
+        "post_process"
     log:
         config.get_log_file(config.fit_plot),
     shell:
@@ -233,6 +253,8 @@ rule plot_pairwsie_ranks:
         script=workflow.source_path("scripts/plot_pairwise_ranks.py"),
     conda:
         "envs/plot.yaml"
+    group:
+        "post_process"
     log:
         config.get_log_file(config.pairwise_ranks_plot),
     shell:
