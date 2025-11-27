@@ -1,5 +1,5 @@
 import os
-from snakemake.io import temp, expand, directory
+from snakemake.io import temp, expand, directory, glob_wildcards
 from snakemake.utils import min_version, validate
 
 min_version("9.12")
@@ -198,14 +198,21 @@ rule write_evidence:
         "cfclone print-model-evidence -i{input} >> {output}) 2>{log}"
 
 
+# def get_runtypes(wildcards):
+#     checkpoint_output = checkpoints.write_run_type_sentinels.get(**wildcards).output[0]
+#     return glob_wildcards(os.path.join(checkpoint_output, "{run_type}.txt")).run_type
+
 def get_runtypes(wildcards):
     checkpoint_output = checkpoints.write_run_type_sentinels.get(**wildcards).output[0]
-    return glob_wildcards(os.path.join(checkpoint_output, "{run_type}.txt")).run_type
+
+    return expand(config.run_type_evidence_template, run_type=glob_wildcards(os.path.join(checkpoint_output, "{run_type}.txt")).run_type)
+    # return glob_wildcards(os.path.join(checkpoint_output, "{run_type}.txt")).run_type
 
 
 rule merge_evidence:
     input:
-        expand(config.run_type_evidence_template, run_type=get_runtypes),
+        # expand(config.run_type_evidence_template, run_type=get_runtypes),
+        evidence_files=get_runtypes
     output:
         config.evidence_file,
     params:
@@ -217,7 +224,7 @@ rule merge_evidence:
     log:
         config.get_log_file(config.evidence_file),
     shell:
-        "(python {params.script} -i {input} -o {output}) >{log} 2>&1"
+        "(python {params.script} -i {input.evidence_files} -o {output}) >{log} 2>&1"
 
 
 rule plot_clone_prevalences:
