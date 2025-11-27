@@ -1,11 +1,11 @@
 import os
-
+from snakemake.io import temp, expand, directory
 from snakemake.utils import min_version, validate
 
-min_version("9.4")
+min_version("9.12")
 
 
-conda: workflow.source_path("envs/global.yaml")
+conda: "envs/global.yaml"
 
 
 validate(config, "schemas/config.schema.yaml")
@@ -13,7 +13,12 @@ validate(config, "schemas/config.schema.yaml")
 # from utils import ConfigManager
 
 
-include: workflow.source_path("utils.py")
+include: "utils.py"
+
+
+pathvars:
+    out_dir=config.config.get("out_dir", "results"),
+    pipeline_dir=config.config.get("pipeline_dir", "pipeline_dir")
 
 
 config = ConfigManager(config)
@@ -80,7 +85,8 @@ rule run_cfclone:
 
 rule write_ancestral_prevlances:
     input:
-        i=str(config.fit_template).format(run_type="full"),
+        # i=str(config.fit_template).format(run_type="full"),
+        i=expand(config.fit_template, run_type="full"),
         t=config.clone_tree_file,
     output:
         o=config.ancestral_prevalence_file,
@@ -97,7 +103,8 @@ rule write_ancestral_prevlances:
 
 rule write_dominance_prob:
     input:
-        str(config.fit_template).format(run_type="full"),
+        # str(config.fit_template).format(run_type="full"),
+        fit=expand(config.fit_template, run_type="full")
     output:
         config.dominance_prob_file,
     conda:
@@ -107,12 +114,13 @@ rule write_dominance_prob:
     log:
         config.get_log_file(config.dominance_prob_file),
     shell:
-        "(cfclone write-dominance-prob -i {input} -o {output}) >{log} 2>&1"
+        "(cfclone write-dominance-prob -i {input.fit} -o {output}) >{log} 2>&1"
 
 
 rule write_pairwise_ranks_file:
     input:
-        str(config.fit_template).format(run_type="full"),
+        # str(config.fit_template).format(run_type="full"),
+        fit=expand(config.fit_template, run_type="full")
     output:
         config.pairwise_ranks_file,
     conda:
@@ -122,12 +130,13 @@ rule write_pairwise_ranks_file:
     log:
         config.get_log_file(config.pairwise_ranks_file),
     shell:
-        "(cfclone write-pairwise-ranks -i {input} -o {output}) >{log} 2>&1"
+        "(cfclone write-pairwise-ranks -i {input.fit} -o {output}) >{log} 2>&1"
 
 
 rule write_parameter_summaries_file:
     input:
-        str(config.fit_template).format(run_type="full"),
+        # str(config.fit_template).format(run_type="full"),
+        fit = expand(config.fit_template,run_type="full")
     output:
         config.parameter_summaries_file,
     conda:
@@ -137,12 +146,13 @@ rule write_parameter_summaries_file:
     log:
         config.get_log_file(config.parameter_summaries_file),
     shell:
-        "(cfclone write-parameter-summaries -i {input} -o {output}) >{log} 2>&1"
+        "(cfclone write-parameter-summaries -i {input.fit} -o {output}) >{log} 2>&1"
 
 
 rule write_summary_file:
     input:
-        str(config.fit_template).format(run_type="full"),
+        # str(config.fit_template).format(run_type="full"),
+        fit = expand(config.fit_template,run_type="full")
     output:
         config.summary_file,
     conda:
@@ -152,12 +162,13 @@ rule write_summary_file:
     log:
         config.get_log_file(config.summary_file),
     shell:
-        "(cfclone write-summary -i {input} -o {output}) >{log} 2>&1"
+        "(cfclone write-summary -i {input.fit} -o {output}) >{log} 2>&1"
 
 
 rule write_tumour_content_file:
     input:
-        str(config.fit_template).format(run_type="full"),
+        # str(config.fit_template).format(run_type="full"),
+        fit = expand(config.fit_template,run_type="full")
     output:
         config.tumour_content_file,
     conda:
@@ -167,7 +178,7 @@ rule write_tumour_content_file:
     log:
         config.get_log_file(config.tumour_content_file),
     shell:
-        "(cfclone write-tumour-content -i {input} -o {output}) >{log} 2>&1"
+        "(cfclone write-tumour-content -i {input.fit} -o {output}) >{log} 2>&1"
 
 
 rule write_evidence:
